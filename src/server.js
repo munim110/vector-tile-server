@@ -7,9 +7,6 @@ import { hideBin } from 'yargs/helpers';
 import { readFile } from 'fs/promises';
 import { readFileSync } from 'fs';
 
-
-
-
 /*
 # Options:
   --config : json file containing configuration options          
@@ -113,8 +110,7 @@ async function read_file_async(file_name){
     let data = await readFile(file_full_path,'utf8')
     OBJCACHE[file_name] = geojsonvt(JSON.parse(data),CONFIG.tileconfig);
     OBJCACHE[file_name].accessrank = Date.now()
-
-    
+   
 }
 
 
