@@ -1,0 +1,189 @@
+<html lang="en">
+    <head>
+
+        <title>Tile Server</title>
+        <meta charset="utf-8">
+        <style>
+            *,html{
+                margin:0;
+                padding:0;
+                font-family: 'Fira Code';
+                box-sizing: border-box;
+            }
+            .icon {
+                display: inline-block;
+                width: 2.5em;
+                height: 2.5em;
+                margin: 1em;
+                stroke-width: 0;
+                stroke: currentColor;
+                fill:  #4caf50;
+            }
+            h6{
+                text-align: center;
+                color: black;
+                font-size: 1.5em;
+                font-weight: normal;
+                padding: 1em;
+            }
+            body{
+                background:#f4f3ef;
+                width:calc(70vw - 0px);
+                margin: 0 auto;
+                /* height: 100vh; */
+            }
+            .cachelist_cont{
+                width:100%;
+                overflow: hidden;
+                background: white;
+                border-radius: 10px;
+                box-shadow: 1px 1px 3px black;
+            }
+            .cachelist_cont table{
+                width:100%;
+                border-collapse: collapse;
+            }
+            .cachelist_cont table tr td,th{
+                padding: 5px 10px;
+            }
+            .cachelist_cont table tr th{
+                text-align: left;
+                font-weight: 300;
+                background: #f8f8f8;
+                padding: 10px 5px;
+                font-size: 12pt;
+                color: black;
+                border-bottom: 1px solid rgba(204, 197, 185, 0.5);
+            }
+            
+            .card,.stat-card{
+                width: 100%;
+                margin: 1em 0 1em 0;
+                border-radius: 10px;
+                overflow: hidden;
+                /* border: 2px solid rgba(204, 197, 185, 0.5); */
+                background: white;
+                border-radius: 10px;
+                box-shadow: 1px 1px 3px black;
+            }
+
+            .card-title{
+                padding-top: 2px;
+                text-align: center;
+                padding:10px;
+                border-bottom: 1px solid rgba(204, 197, 185, 0.5);
+                background: #f8f8f8;
+                font-weight: 300;
+            }
+            .card pre{
+                width: 100%;
+                font-family: monospace;
+                text-align: left;
+                box-sizing: border-box;
+                padding: 1em;
+            }
+            .stat_text{
+                font-size: 1.5em;
+                text-align: center;
+                width: 100%;
+                padding: 15px;
+            }
+            .stat-card div .card-title{
+                padding: 15px;
+            }
+            .stat-card div{
+                border-right:2px solid rgba(204, 197, 185, 0.5);
+            }
+            .stat-card div:last-child{
+                border-right:0;
+            }
+            .bull{
+                color: #4caf50;
+            }
+        </style>
+        <link rel="icon" href="data:image/svg+xml;base64,PCEtLSBHZW5lcmF0ZWQgYnkgSWNvTW9vbi5pbyAtLT4KPHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiB2aWV3Qm94PSIwIDAgMzIgMzIiPgo8dGl0bGU+c3RhY2s8L3RpdGxlPgo8cGF0aCBkPSJNMzIgMTBsLTE2LTgtMTYgOCAxNiA4IDE2LTh6TTE2IDQuNjU1bDEwLjY4OSA1LjM0NS0xMC42ODkgNS4zNDUtMTAuNjg5LTUuMzQ1IDEwLjY4OS01LjM0NXpNMjguNzk1IDE0LjM5OGwzLjIwNSAxLjYwMi0xNiA4LTE2LTggMy4yMDUtMS42MDIgMTIuNzk1IDYuMzk4ek0yOC43OTUgMjAuMzk4bDMuMjA1IDEuNjAyLTE2IDgtMTYtOCAzLjIwNS0xLjYwMiAxMi43OTUgNi4zOTh6Ij48L3BhdGg+Cjwvc3ZnPgo=">
+    </head>
+    <body>
+        <!-- symbol definitaions -->
+        <svg style="position: absolute; width: 0; height: 0; overflow: hidden" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+            <defs>
+                <symbol id="icon-microchip" viewBox="0 0 24 28">
+                    <path d="M3 20v2h-1.75c-0.141 0-0.25-0.109-0.25-0.25v-0.25h-0.75c-0.141 0-0.25-0.109-0.25-0.25v-0.5c0-0.141 0.109-0.25 0.25-0.25h0.75v-0.25c0-0.141 0.109-0.25 0.25-0.25h1.75zM3 16v2h-1.75c-0.141 0-0.25-0.109-0.25-0.25v-0.25h-0.75c-0.141 0-0.25-0.109-0.25-0.25v-0.5c0-0.141 0.109-0.25 0.25-0.25h0.75v-0.25c0-0.141 0.109-0.25 0.25-0.25h1.75zM3 12v2h-1.75c-0.141 0-0.25-0.109-0.25-0.25v-0.25h-0.75c-0.141 0-0.25-0.109-0.25-0.25v-0.5c0-0.141 0.109-0.25 0.25-0.25h0.75v-0.25c0-0.141 0.109-0.25 0.25-0.25h1.75zM3 8v2h-1.75c-0.141 0-0.25-0.109-0.25-0.25v-0.25h-0.75c-0.141 0-0.25-0.109-0.25-0.25v-0.5c0-0.141 0.109-0.25 0.25-0.25h0.75v-0.25c0-0.141 0.109-0.25 0.25-0.25h1.75zM3 4v2h-1.75c-0.141 0-0.25-0.109-0.25-0.25v-0.25h-0.75c-0.141 0-0.25-0.109-0.25-0.25v-0.5c0-0.141 0.109-0.25 0.25-0.25h0.75v-0.25c0-0.141 0.109-0.25 0.25-0.25h1.75zM20 1.5v23c0 0.828-0.672 1.5-1.5 1.5h-13c-0.828 0-1.5-0.672-1.5-1.5v-23c0-0.828 0.672-1.5 1.5-1.5h13c0.828 0 1.5 0.672 1.5 1.5zM24 20.75v0.5c0 0.141-0.109 0.25-0.25 0.25h-0.75v0.25c0 0.141-0.109 0.25-0.25 0.25h-1.75v-2h1.75c0.141 0 0.25 0.109 0.25 0.25v0.25h0.75c0.141 0 0.25 0.109 0.25 0.25zM24 16.75v0.5c0 0.141-0.109 0.25-0.25 0.25h-0.75v0.25c0 0.141-0.109 0.25-0.25 0.25h-1.75v-2h1.75c0.141 0 0.25 0.109 0.25 0.25v0.25h0.75c0.141 0 0.25 0.109 0.25 0.25zM24 12.75v0.5c0 0.141-0.109 0.25-0.25 0.25h-0.75v0.25c0 0.141-0.109 0.25-0.25 0.25h-1.75v-2h1.75c0.141 0 0.25 0.109 0.25 0.25v0.25h0.75c0.141 0 0.25 0.109 0.25 0.25zM24 8.75v0.5c0 0.141-0.109 0.25-0.25 0.25h-0.75v0.25c0 0.141-0.109 0.25-0.25 0.25h-1.75v-2h1.75c0.141 0 0.25 0.109 0.25 0.25v0.25h0.75c0.141 0 0.25 0.109 0.25 0.25zM24 4.75v0.5c0 0.141-0.109 0.25-0.25 0.25h-0.75v0.25c0 0.141-0.109 0.25-0.25 0.25h-1.75v-2h1.75c0.141 0 0.25 0.109 0.25 0.25v0.25h0.75c0.141 0 0.25 0.109 0.25 0.25z"></path>
+                </symbol>
+                <symbol id="icon-cubes" viewBox="0 0 34 28">
+                    <path d="M10 25.5l6-3v-4.906l-6 2.562v5.344zM9 18.406l6.312-2.703-6.312-2.703-6.312 2.703zM26 25.5l6-3v-4.906l-6 2.562v5.344zM25 18.406l6.312-2.703-6.312-2.703-6.312 2.703zM18 13.828l6-2.578v-4.156l-6 2.562v4.172zM17 7.906l6.891-2.953-6.891-2.953-6.891 2.953zM34 16v6.5c0 0.75-0.422 1.453-1.109 1.781l-7 3.5c-0.281 0.156-0.578 0.219-0.891 0.219s-0.609-0.063-0.891-0.219l-7-3.5c-0.047-0.016-0.078-0.031-0.109-0.063-0.031 0.031-0.063 0.047-0.109 0.063l-7 3.5c-0.281 0.156-0.578 0.219-0.891 0.219s-0.609-0.063-0.891-0.219l-7-3.5c-0.688-0.328-1.109-1.031-1.109-1.781v-6.5c0-0.797 0.484-1.516 1.219-1.844l6.781-2.906v-6.25c0-0.797 0.484-1.516 1.219-1.844l7-3c0.25-0.109 0.516-0.156 0.781-0.156s0.531 0.047 0.781 0.156l7 3c0.734 0.328 1.219 1.047 1.219 1.844v6.25l6.781 2.906c0.75 0.328 1.219 1.047 1.219 1.844z"></path>
+                </symbol>
+                <symbol id="icon-mail-reply-all" viewBox="0 0 28 28">
+                    <path d="M10 16.906v1.094c0 0.406-0.25 0.766-0.609 0.922-0.125 0.047-0.266 0.078-0.391 0.078-0.266 0-0.516-0.094-0.703-0.297l-8-8c-0.391-0.391-0.391-1.016 0-1.406l8-8c0.281-0.297 0.719-0.375 1.094-0.219 0.359 0.156 0.609 0.516 0.609 0.922v1.078l-6.203 6.219c-0.391 0.391-0.391 1.016 0 1.406zM28 17.5c0 3.25-2.453 8.031-2.562 8.234-0.078 0.172-0.25 0.266-0.438 0.266-0.047 0-0.094 0-0.141-0.016-0.234-0.078-0.375-0.297-0.359-0.531 0.453-4.266-0.078-7.078-1.656-8.828-1.328-1.484-3.484-2.281-6.844-2.547v3.922c0 0.406-0.25 0.766-0.609 0.922-0.125 0.047-0.266 0.078-0.391 0.078-0.266 0-0.516-0.094-0.703-0.297l-8-8c-0.391-0.391-0.391-1.016 0-1.406l8-8c0.281-0.297 0.719-0.375 1.094-0.219 0.359 0.156 0.609 0.516 0.609 0.922v4.094c4.312 0.297 7.391 1.437 9.359 3.453 2.359 2.422 2.641 5.703 2.641 7.953z"></path>
+                </symbol>
+                <symbol id="icon-clock" viewBox="0 0 32 32">
+                    <path d="M20.586 23.414l-6.586-6.586v-8.828h4v7.172l5.414 5.414zM16 0c-8.837 0-16 7.163-16 16s7.163 16 16 16 16-7.163 16-16-7.163-16-16-16zM16 28c-6.627 0-12-5.373-12-12s5.373-12 12-12c6.627 0 12 5.373 12 12s-5.373 12-12 12z"></path>
+                </symbol>
+                <symbol id="icon-tasks" viewBox="0 0 28 28">
+                    <path d="M16 22h10v-2h-10v2zM10 14h16v-2h-16v2zM20 6h6v-2h-6v2zM28 19v4c0 0.547-0.453 1-1 1h-26c-0.547 0-1-0.453-1-1v-4c0-0.547 0.453-1 1-1h26c0.547 0 1 0.453 1 1zM28 11v4c0 0.547-0.453 1-1 1h-26c-0.547 0-1-0.453-1-1v-4c0-0.547 0.453-1 1-1h26c0.547 0 1 0.453 1 1zM28 3v4c0 0.547-0.453 1-1 1h-26c-0.547 0-1-0.453-1-1v-4c0-0.547 0.453-1 1-1h26c0.547 0 1 0.453 1 1z"></path>
+                </symbol>
+                <symbol id="icon-stack" viewBox="0 0 32 32">
+                    <path d="M32 10l-16-8-16 8 16 8 16-8zM16 4.655l10.689 5.345-10.689 5.345-10.689-5.345 10.689-5.345zM28.795 14.398l3.205 1.602-16 8-16-8 3.205-1.602 12.795 6.398zM28.795 20.398l3.205 1.602-16 8-16-8 3.205-1.602 12.795 6.398z"></path>
+                </symbol>
+            </defs>
+        </svg>
+
+        <!-- dashboard stats -->
+        <div>
+                    
+            <h6>Vector Tile Server <br> <span style="font-size: 0.7em;">V1.0.1</span> </h6>
+
+            <div class="stat-card">
+                <div style="width: calc(100% / 4);float: left;">
+                    <p class="card-title">
+                        <svg class="icon icon-stack"><use xlink:href="#icon-cubes"></use></svg>
+                        <br>
+                        Cached Object
+                    </p>
+                    <p class="stat_text">{{cached_obj_count}}</p>
+                </div>
+                <div style="width: calc(100% / 4);float: left;">
+                    <p class="card-title">
+                        <svg class="icon icon-stack"><use xlink:href="#icon-mail-reply-all"></use></svg>
+                        <br>
+                        Served Tile Request
+                    </p>
+                    <p class="stat_text">{{served_tile_request}}</p>
+                </div>
+                <div style="width: calc(100% / 4);float: left;">
+                    <p class="card-title">
+                        <svg class="icon icon-stack"><use xlink:href="#icon-tasks"></use></svg>
+                        <br>
+                        Memory Usage
+                    </p>
+                    <p class="stat_text">{{memory_in_mb}} MB</p>
+                </div>
+                <div style="width: calc(100% / 4);float: left;">
+                    <p class="card-title">
+                        <svg class="icon icon-stack"><use xlink:href="#icon-clock"></use></svg>
+                        <br>
+                        Uptime
+                    </p>
+                    <p class="stat_text">{{uptime}} hour</p>
+                </div>
+            </div>
+
+            <!-- geojson vt config -->
+            <div class="card">
+                <p class="card-title">Tile Configuration</p>            
+                <pre>{{tile_config}}</pre>        
+            </div>
+            
+            <!-- cachelist -->
+            <div class='cachelist_cont'>
+                <table cellpadding=0 cellspacing=0>
+                    <tr>
+                        <th>sl.</th><th>Cached Object List</th>
+                    </tr>
+                    {{cached_obj_list}}
+                </table>
+            <div>
+
+        </div> 
+    </body>
+</html>

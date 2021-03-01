@@ -1,0 +1,27 @@
+{   
+    "protocol":"TCP",
+    "port": 7788,
+    "unix_socket":"/tmp/tileserver.sock",
+
+    "tile_format":"protobuf",
+    
+    "backend":"fs",
+    "source_dir":"/home/nazmul/Dev/geojson_vt_server/data",
+    
+    "dabase_url":"nada",
+    "table":"ff",
+
+    "ncache":5,
+    "tileconfig" : {
+        "maxZoom": 14,           
+        "tolerance": 3,          
+        "extent": 4096, 
+        "buffer": 64,
+        "debug": 0,
+        "lineMetrics": false,
+        "promoteId": null,     
+        "generateId": false,    
+        "indexMaxZoom": 5, 
+        "indexMaxPoints": 100000
+    }
+}

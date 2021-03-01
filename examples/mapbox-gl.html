@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>vector tile example</title>
+<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+<script src="./js/mapbox-gl-unminified.js"></script>
+<!-- <link href="https://api.mapbox.com/mapbox-gl-js/v2.0.0/mapbox-gl.css" rel="stylesheet" /> -->
+<style>
+	body { margin: 0; padding: 0; }
+	#map { position: absolute; top: 0; bottom: 0; width: 100%; }
+    canvas {
+  outline: none;
+  -webkit-tap-highlight-color: rgba(255, 255, 255, 0); /* mobile webkit */
+}
+</style>
+</head>
+<body>
+<div id="map"></div>
+<script>
+    // mapboxgl.accessToken = 'pk.eyJ1IjoibmF6bXVsLXJpbWVzIiwiYSI6ImNrOWFzeHNtcDA3MjAzbG50dnB0YmkxNnAifQ.usNB6Kf9PyFtKTUF1XI38g';
+    
+    var map = new mapboxgl.Map({
+        container: 'map',
+        zoom: 6,
+        center: [89, 24]
+    });
+
+    map.addSource('bada', {
+        'type': 'vector',
+        'tiles': [
+            // 'http://127.0.0.1:7788/pr.dly.at_2020-08-21_UTC00.d_01.geojson/{z}/{x}/{y}'
+            'http://127.0.0.1:7788/tile/tmax.json/{z}/{x}/{y}'
+            // 'http://127.0.0.1:7788/rh.F_20201214.S_2020121400.E_2020121500.geojson/{z}/{x}/{y}'
+        ],
+        'minzoom': 2,
+        'maxzoom': 14
+    });
+
+
+
+    map.addSource('coastline', {
+        'type': 'vector',
+        'tiles': [
+            // 'http://127.0.0.1:7788/pr.dly.at_2020-08-21_UTC00.d_01.geojson/{z}/{x}/{y}'
+            'http://127.0.0.1:7788/tile/m10a0ne.json/{z}/{x}/{y}'
+            // 'http://127.0.0.1:7788/rh.F_20201214.S_2020121400.E_2020121500.geojson/{z}/{x}/{y}'
+        ],
+        'minzoom': 2,
+        'maxzoom': 14
+    });
+
+        map.addLayer(
+            {
+                'id': 'bada',
+                'type': 'fill',
+                'source': 'bada',
+                'source-layer': 'geojsonLayer',
+                'paint': {
+                    'fill-color' : ['get','fill'],
+                    'fill-outline-color':['get','fill']
+                }
+            },
+        );
+    // });
+
+
+
+        map.addLayer(
+            {
+                'id': 'coastline',
+                'type': 'line',
+                'source': 'coastline',
+                'source-layer': 'geojsonLayer',
+                'layout': {
+                    'line-cap': 'round',
+                    'line-join': 'round'
+                },
+                'paint': {
+                    
+                    "line-color":'black'
+                }
+            },
+            
+        );
+    
+   
+    // map.setPaintProperty("bada", "fill-color",[["fill"]]);
+
+    map.addControl(new mapboxgl.NavigationControl());
+</script>
+
+</body>
+</html>

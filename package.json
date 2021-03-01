@@ -1,0 +1,28 @@
+{
+  "name": "vector-tile-server",
+  "version": "1.0.0",
+  "description": "server vector tiles using geojson files.",
+  "main": "src/server.js",
+  "type": "module",
+  "directories": {
+    "example": "examples"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nzahasan/vector-tile-server.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/nzahasan/vector-tile-server/issues"
+  },
+  "homepage": "https://github.com/nzahasan/vector-tile-server#readme",
+  "dependencies": {
+    "geojson-vt": "^3.2.1",
+    "vt-pbf": "^3.1.1",
+    "yargs": "^16.2.0"
+  }
+}
