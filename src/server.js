@@ -99,6 +99,8 @@ function get_tile(file_name,zxy){
     return PROMISES[file_name].then(()=>{
         OBJCACHE[file_name].accessrank = Date.now()
         return OBJCACHE[file_name].getTile(z,x,y)
+    }).catch((err)=>{
+        console.log(err)
     });
     
 
@@ -132,6 +134,7 @@ function get_url_parts(req){
         x = parseInt(parts[4]),
         y = parseInt(parts[5]);
 
+    
     if (route !=undefined || route!=''){
         if(route=='tile'){
             if( file != undefined && z!=undefined && x!=undefined && y!=undefined ){
@@ -160,7 +163,7 @@ function get_url_parts(req){
     @returns plain text 200 OK response 
 */
 
-function rj200(res,data,type){
+function response_json(res,data,type){
     res.writeHead(200, {
         'Content-Type': type,
         'Access-Control-Allow-Origin': '*'
@@ -172,7 +175,7 @@ function rj200(res,data,type){
 /*
     @returns binary encoded 200 OK response 
 */
-function rb200(res,data,type){
+function response_protobuf(res,data,type){
     res.writeHead(200, {
         'Content-Type': type,
         'Access-Control-Allow-Origin': '*'
@@ -184,19 +187,17 @@ function rb200(res,data,type){
     
 }
 /*
-    @rturns 404 Not Found
+    @returns 404 Not Found
 */
-function r404(res,message=''){
-    res.writeHead(404,{
-        'Message':message
-    })
+function response_404(res,message=''){
+    res.writeHead(404,{'Message':message})
     res.end()
 }
 
 /*
-    @rturns 204 No Content
+    @returns 204 No Content
 */
-function r204(res){
+function response_204(res){
     res.writeHead(204, { 'Access-Control-Allow-Origin': '*' })
     return res.end()
 }
@@ -244,16 +245,16 @@ function tile_response(tile_data,res){
     
     if(tile_data != null && tile_data !=undefined) {
         if(CONFIG.tile_format=='protobuf'){
-            rb200(res,tile_data,'application/protobuf')
+            response_protobuf(res,tile_data,'application/protobuf')
         }
         else if(CONFIG.tile_format=='geojson'){
-            rj200(res,tile_data,'application/geo+json')
+            response_json(res,tile_data,'application/geo+json')
         }
     }
     else if(tile_data==null) { 
-        r204(res);
+        response_204(res);
     }else{
-        r404(res);
+        response_404(res);
     }
 
 }
@@ -262,13 +263,12 @@ function tile_response(tile_data,res){
     @handles http requests
 */
 
-
 async function handle_request(req,res){
 
     let params = get_url_parts(req)
     
     if (params == null){
-        rj200(res,"{'message':'invalid uri'}",'application/json')
+        response_json(res,"{'message':'invalid uri'}",'application/json')
 
     }
 
@@ -279,14 +279,14 @@ async function handle_request(req,res){
         })
         
     }
-    else if(params.route=='dash'){
+    else if(params.route=='dashboard'){
 
         dashboard_response(res).then(()=>{
             console.log('D;',Date.now())
         });
         
     }else{
-        r204(res);
+        response_204(res);
         
     }
     

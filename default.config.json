@@ -6,7 +6,7 @@
     "tile_format":"protobuf",
     
     "backend":"fs",
-    "source_dir":"/home/nazmul/Dev/geojson_vt_server/data",
+    "source_dir":"/Users/nzahasan/Downloads/vector-tile-server/dta",
     
     "dabase_url":"nada",
     "table":"ff",
