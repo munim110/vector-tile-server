@@ -8,8 +8,6 @@ import { readFile } from 'fs/promises';
 import { readFileSync } from 'fs';
 
 
-
-
 /*
 # Options:
   --config : json file containing configuration options          
@@ -113,6 +111,7 @@ async function read_file_async(file_name){
 
     // let data = readFileSync(file_full_path,'utf8');
     let data = await readFile(file_full_path,'utf8')
+    
     OBJCACHE[file_name] = geojsonvt(JSON.parse(data),CONFIG.tileconfig);
     OBJCACHE[file_name].accessrank = Date.now()
 
@@ -312,6 +311,7 @@ function main(){
     if( protocol ==='TCP' ){
         createServer(handle_request).listen(CONFIG.port)
         console.log(`listening to http://127.0.0.1:${CONFIG.port}`)
+        console.log(`visit dashboard using the link http://127.0.0.1:${CONFIG.port}/dashboard`)
     }
     else if( protocol === 'SOCKET' ){
         createServer(handle_request).listen(CONFIG.unix_socket)

@@ -2,5 +2,5 @@ node_modules
 .cache
 data/*.json
 data/*.geojson
-
+.DS_Store
 
