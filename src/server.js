@@ -1,11 +1,13 @@
-import { createServer } from 'http';
-import { parse } from 'url';
+#!/usr/bin/env node
+import { createServer, request } from 'http';
+import * as url from 'url';
 import geojsonvt from 'geojson-vt';
 import vtpbf from 'vt-pbf';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { readFile } from 'fs/promises';
 import { readFileSync } from 'fs';
+
 
 
 /*
@@ -26,7 +28,7 @@ const CONFIG = JSON.parse(readFileSync(argv.config))
     geojson-vt object cache  
 */
 
-const OBJCACHE = {}
+const OBJECT_CACHE = {}
 const PROMISES = {}
 
 /* request counter variable */
@@ -41,30 +43,30 @@ const dashboard_template = readFileSync('./src/dashboard.html','utf8')
 /*
     @removed cached object following LRU cache replacement policy 
 */
-function cache_control(){
+function lru_cache_control(){
 
 
-    let obj_keys = Object.keys(OBJCACHE);
+    let obj_keys = Object.keys(OBJECT_CACHE);
 
     if ( obj_keys.length > CONFIG.ncache - 1 ){
 
         // find objcache key with minimum accesstime
         let remove_key = obj_keys[0];
         
-        let min_accessrank = OBJCACHE[obj_keys[0]].accessrank;
+        let min_accessrank = OBJECT_CACHE[obj_keys[0]].accessrank;
         
         for(let i=0;i<obj_keys.length; i++){
             
             let ikey = obj_keys[i];
 
-            if (OBJCACHE[ikey].accessrank < min_accessrank ){
+            if (OBJECT_CACHE[ikey].accessrank < min_accessrank ){
                 remove_key = ikey;
             }
 
         }
 
         console.log('Cache limit exceeds removing: ', remove_key)
-        delete(OBJCACHE[remove_key])
+        delete(OBJECT_CACHE[remove_key])
 
     }
     
@@ -84,9 +86,9 @@ function get_tile(file_name,zxy){
     let call_time = Date.now();
     SERVED_TILES++
     
-    if ( OBJCACHE[file_name] == undefined && PROMISES[file_name]==undefined ){ 
+    if ( OBJECT_CACHE[file_name] == undefined && PROMISES[file_name]==undefined ){ 
         // check if cache need to be cleared before reading a new file 
-        // cache_control();
+        // lru_cache_control();
         console.log(`R;${call_time}`,z,x,y,file_name)
         PROMISES[file_name] = read_file_async(file_name)
     }
@@ -95,8 +97,8 @@ function get_tile(file_name,zxy){
     }
     
     return PROMISES[file_name].then(()=>{
-        OBJCACHE[file_name].accessrank = Date.now()
-        return OBJCACHE[file_name].getTile(z,x,y)
+        OBJECT_CACHE[file_name].accessrank = Date.now()
+        return OBJECT_CACHE[file_name].getTile(z,x,y)
     }).catch((err)=>{
         console.log(err)
     });
@@ -112,8 +114,8 @@ async function read_file_async(file_name){
     // let data = readFileSync(file_full_path,'utf8');
     let data = await readFile(file_full_path,'utf8')
     
-    OBJCACHE[file_name] = geojsonvt(JSON.parse(data),CONFIG.tileconfig);
-    OBJCACHE[file_name].accessrank = Date.now()
+    OBJECT_CACHE[file_name] = geojsonvt(JSON.parse(data),CONFIG.tileconfig);
+    OBJECT_CACHE[file_name].accessrank = Date.now()
 
     
 }
@@ -123,15 +125,17 @@ async function read_file_async(file_name){
     @parses filename, z, x, y values from url
 */ 
 function get_url_parts(req){
-
-
-    let parts = parse(req.url,true).pathname.split('/')
     
+    
+    let _url = url.parse(req.url,true)
+
+    let parts = _url.pathname.split('/')
+    let file = _url.query['file']
+
     let route = parts[1],
-        file = parts[2],
-        z = parseInt(parts[3]),
-        x = parseInt(parts[4]),
-        y = parseInt(parts[5]);
+        z = parseInt(parts[2]),
+        x = parseInt(parts[3]),
+        y = parseInt(parts[4]);
 
     
     if (route !=undefined || route!=''){
@@ -185,11 +189,15 @@ function response_protobuf(res,data,type){
     // buffer = null
     
 }
+
 /*
     @returns 404 Not Found
 */
 function response_404(res,message=''){
-    res.writeHead(404,{'Message':message})
+    res.writeHead(404, {
+        'Access-Control-Allow-Origin': '*', 
+        'Message':message
+    })
     res.end()
 }
 
@@ -197,14 +205,18 @@ function response_404(res,message=''){
     @returns 204 No Content
 */
 function response_204(res){
-    res.writeHead(204, { 'Access-Control-Allow-Origin': '*' })
+    res.writeHead(204, { 
+        'Access-Control-Allow-Origin': '*'
+    })
     return res.end()
 }
 
-
+/*
+    @returns dashboard response
+*/
 async function dashboard_response(res){
 
-    let cached_obj_keys = Object.keys(OBJCACHE);
+    let cached_obj_keys = Object.keys(OBJECT_CACHE);
     let memory_usage = (process.memoryUsage().heapUsed / (1024 * 1024)).toFixed(2).toString()
     let cached_obj_count = cached_obj_keys.length.toString();
     let tile_conf_str = JSON.stringify(CONFIG.tileconfig,null,4);
@@ -217,7 +229,7 @@ async function dashboard_response(res){
             <td>${i+1}</td>
             <td>
                 <a><span class='bull'>&#x25A3;</span> ${cached_obj_keys[i]}</a>
-                <br>Last access time: ${OBJCACHE[cached_obj_keys[i]].accessrank}
+                <br>Last access time: ${OBJECT_CACHE[cached_obj_keys[i]].accessrank}
             </td>
         </tr>
         `;
@@ -239,7 +251,9 @@ async function dashboard_response(res){
 }
 
 
-
+/*
+    @returns json/protobuf tiles
+*/
 function tile_response(tile_data,res){
     
     if(tile_data != null && tile_data !=undefined) {
@@ -261,7 +275,6 @@ function tile_response(tile_data,res){
 /*
     @handles http requests
 */
-
 async function handle_request(req,res){
 
     let params = get_url_parts(req)
@@ -291,6 +304,9 @@ async function handle_request(req,res){
     
 }
 
+/* 
+    @parses configuration of server
+*/
 function get_config_protocol(){
 
     let isTCP = CONFIG.protocol.toUpperCase() == 'TCP' && 
@@ -304,14 +320,17 @@ function get_config_protocol(){
     if (isSOCKET === true) {return 'SOCKET';}
 }
 
+/* 
+    @entry point of the server
+*/
 function main(){
 
     let protocol = get_config_protocol(); 
 
     if( protocol ==='TCP' ){
         createServer(handle_request).listen(CONFIG.port)
-        console.log(`listening to http://127.0.0.1:${CONFIG.port}`)
-        console.log(`visit dashboard using the link http://127.0.0.1:${CONFIG.port}/dashboard`)
+        console.log(`* listening to http://127.0.0.1:${CONFIG.port}`)
+        console.log(`* visit dashboard using the link http://127.0.0.1:${CONFIG.port}/dashboard`)
     }
     else if( protocol === 'SOCKET' ){
         createServer(handle_request).listen(CONFIG.unix_socket)
@@ -336,27 +355,13 @@ main();
  - Add multi process support
  - Add support for loading composite tiles composite layer support
  - read file as stream to reduce memory usage (priority)
-
- #Notes:
-    #) file read is blocking by nature
-       if fileis there and cache is not 
-       initialized then will the read file multiple time
-
-        ** possible solutions:
-            do a prerequest to initialize the cache
-            then the get_tile call can be non blocking
-
-    #) readFileSync causes high memory usage when reading
-       large files. It drops afterwards. 
-       **  Possible solutions:
-             - Database can be used to check if this can be solved
-             - read json file in streaming way
+ - change the request pattern like this /tile/z/x/y?file=<file1_name>&file=<file2_name>
 
 
-    Request Pattern:
-    - /tile/filename/z/x/y                                |  loading single file
-    - /tile/f_one[layer_name]+f_two[layer_name]/z/x/y.mvt | loading multiple file
-    - /dash/                                              |  dashboard
+#Request Pattern:
+- /tile/filename/z/x/y                                |  loading single file
+- /tile/f_one[layer_name]+f_two[layer_name]/z/x/y.mvt | loading multiple file
+- /dash/                                              |  dashboard
      
 
 ** best implementation yet

@@ -5,13 +5,13 @@
         <meta charset="utf-8">
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Victor+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
         
         <style>
             *,html{
                 margin:0;
                 padding:0;
-                font-family: 'Victor Mono';
+                font-family: 'JetBrains Mono';
                 box-sizing: border-box;
             }
             .icon {
@@ -42,6 +42,7 @@
                 background: white;
                 border-radius: 10px;
                 box-shadow: 1px 1px 3px black;
+                padding: 0.75rem;
             }
             .cachelist_cont table{
                 width:100%;
@@ -53,7 +54,7 @@
             .cachelist_cont table tr th{
                 text-align: left;
                 font-weight: 300;
-                background: #f8f8f8;
+                /* background: #f8f8f8;s */
                 padding: 10px 5px;
                 font-size: 12pt;
                 color: black;
@@ -135,7 +136,7 @@
         <!-- dashboard stats -->
         <div>
                     
-            <h6>Vector Tile Server <br> <span style="font-size: 0.7em;">V1.0.1</span> </h6>
+            <h6>Vector Tile Server <br> <span style="font-size: 0.7em;">V1.0.5</span> </h6>
 
             <div class="stat-card">
                 <div style="width: calc(100% / 4);float: left;">
@@ -186,6 +187,7 @@
                     </tr>
                     {{cached_obj_list}}
                 </table>
+                
             <div>
 
         </div> 
