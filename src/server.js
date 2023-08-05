@@ -77,14 +77,15 @@ function lru_cache_control(){
 /*
     @returns a promise containing sliced tile for ZXY index
 */ 
-function get_tile(file_name,zxy){
+async function get_tile(file_name,zxy){
 
     let z=zxy.z,
         x=zxy.x,
         y=zxy.y;
 
     let call_time = Date.now();
-    SERVED_TILES++
+    
+    SERVED_TILES++;
     
     if ( OBJECT_CACHE[file_name] == undefined && PROMISES[file_name]==undefined ){ 
         // check if cache need to be cleared before reading a new file 
@@ -97,7 +98,7 @@ function get_tile(file_name,zxy){
     }
     
     return PROMISES[file_name].then(()=>{
-        OBJECT_CACHE[file_name].accessrank = Date.now()
+        // OBJECT_CACHE[file_name].accessrank = Date.now()
         return OBJECT_CACHE[file_name].getTile(z,x,y)
     }).catch((err)=>{
         console.log(err)
@@ -166,9 +167,9 @@ function get_url_parts(req){
     @returns plain text 200 OK response 
 */
 
-function response_json(res,data,type){
+function response_json(res, data){
     res.writeHead(200, {
-        'Content-Type': type,
+        'Content-Type': 'application/geo+json',
         'Access-Control-Allow-Origin': '*'
     })
     res.write(JSON.stringify(data))
@@ -178,9 +179,9 @@ function response_json(res,data,type){
 /*
     @returns binary encoded 200 OK response 
 */
-function response_protobuf(res,data,type){
+function response_protobuf(res, data){
     res.writeHead(200, {
-        'Content-Type': type,
+        'Content-Type': 'application/protobuf',
         'Access-Control-Allow-Origin': '*'
     })
     let buffer = Buffer.from(vtpbf.fromGeojsonVt({'geojsonLayer':data}))
@@ -258,10 +259,10 @@ function tile_response(tile_data,res){
     
     if(tile_data != null && tile_data !=undefined) {
         if(CONFIG.tile_format=='protobuf'){
-            response_protobuf(res,tile_data,'application/protobuf')
+            response_protobuf(res,tile_data)
         }
         else if(CONFIG.tile_format=='geojson'){
-            response_json(res,tile_data,'application/geo+json')
+            response_json(res,tile_data)
         }
     }
     else if(tile_data==null) { 
@@ -275,33 +276,27 @@ function tile_response(tile_data,res){
 /*
     @handles http requests
 */
-async function handle_request(req,res){
+function handle_request(req,res){
 
     let params = get_url_parts(req)
-    
-    if (params == null){
-        response_json(res,"{'message':'invalid uri'}",'application/json')
 
+    if (params == null){
+        response_json(res, "{'message':'invalid uri'}",'application/json')
     }
 
     else if (params.route=='tile'){
-        
         get_tile(params.tile.file, params.tile.zxy).then((tile_data)=>{
             tile_response(tile_data,res)
         })
-        
     }
-    else if(params.route=='dashboard'){
 
+    else if(params.route=='dashboard'){
         dashboard_response(res).then(()=>{
             console.log('D;',Date.now())
         });
-        
     }else{
         response_204(res);
-        
     }
-    
 }
 
 /* 
@@ -311,12 +306,12 @@ function get_config_protocol(){
 
     let isTCP = CONFIG.protocol.toUpperCase() == 'TCP' && 
                 CONFIG.port != undefined;
-    
+
     if (isTCP===true) {return 'TCP';}
 
     let isSOCKET = CONFIG.protocol.toUpperCase() == 'SOCKET' && 
                    CONFIG.unix_socket != undefined;
-    
+
     if (isSOCKET === true) {return 'SOCKET';}
 }
 
