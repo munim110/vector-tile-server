@@ -22,6 +22,7 @@
   "homepage": "https://github.com/nzahasan/vector-tile-server#readme",
   "dependencies": {
     "geojson-vt": "^3.2.1",
+    "lru-cache": "^11.0.2",
     "vt-pbf": "^3.1.1",
     "yargs": "^16.2.0"
   }

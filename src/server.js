@@ -7,6 +7,8 @@ import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { readFile } from 'fs/promises';
 import { readFileSync } from 'fs';
+import { LRUCache } from 'lru-cache';
+
 
 
 
@@ -28,7 +30,11 @@ const CONFIG = JSON.parse(readFileSync(argv.config))
     geojson-vt object cache  
 */
 
-const OBJECT_CACHE = {}
+const OBJECT_CACHE = new LRUCache({
+    max: CONFIG.ncache, // Maximum number of items in the cache
+    ttl: 1000 * 60 * 60, // Optional: Time-to-live in milliseconds (e.g., 1 hour)
+    updateAgeOnGet: true, // Update the item's age when accessed
+});
 const PROMISES = {}
 
 /* request counter variable */
@@ -40,39 +46,6 @@ const START_TIME = Date.now();
 
 const dashboard_template = readFileSync('./src/dashboard.html','utf8')
 
-/*
-    @removed cached object following LRU cache replacement policy 
-*/
-function lru_cache_control(){
-
-
-    let obj_keys = Object.keys(OBJECT_CACHE);
-
-    if ( obj_keys.length > CONFIG.ncache - 1 ){
-
-        // find objcache key with minimum accesstime
-        let remove_key = obj_keys[0];
-        
-        let min_accessrank = OBJECT_CACHE[obj_keys[0]].accessrank;
-        
-        for(let i=0;i<obj_keys.length; i++){
-            
-            let ikey = obj_keys[i];
-
-            if (OBJECT_CACHE[ikey].accessrank < min_accessrank ){
-                remove_key = ikey;
-            }
-
-        }
-
-        console.log('Cache limit exceeds removing: ', remove_key)
-        delete(OBJECT_CACHE[remove_key])
-
-    }
-    
-    return 0;
-
-}
 
 /*
     @returns a promise containing sliced tile for ZXY index
@@ -87,11 +60,9 @@ async function get_tile(file_name,zxy){
     
     SERVED_TILES++;
     
-    if ( OBJECT_CACHE[file_name] == undefined && PROMISES[file_name]==undefined ){ 
-        // check if cache need to be cleared before reading a new file 
-        // lru_cache_control();
-        console.log(`R;${call_time}`,z,x,y,file_name)
-        PROMISES[file_name] = read_file_async(file_name)
+    if (!OBJECT_CACHE.has(file_name) && PROMISES[file_name] == undefined) { 
+        PROMISES[file_name] = read_file_async(file_name);
+        console.log(`R;${call_time}`,z,x,y,file_name);
     }
     else{
         console.log(`C;${call_time}`,z,x,y,file_name);
@@ -99,7 +70,7 @@ async function get_tile(file_name,zxy){
     
     return PROMISES[file_name].then(()=>{
         // OBJECT_CACHE[file_name].accessrank = Date.now()
-        return OBJECT_CACHE[file_name].getTile(z,x,y)
+        return OBJECT_CACHE.get(file_name).getTile(z, x, y);
     }).catch((err)=>{
         console.log(err)
     });
@@ -108,18 +79,19 @@ async function get_tile(file_name,zxy){
 }
 
 
-async function read_file_async(file_name){
-    
-    let file_full_path = `${CONFIG.source_dir}/${file_name}`
-
-    // let data = readFileSync(file_full_path,'utf8');
-    let data = await readFile(file_full_path,'utf8')
-    
-    OBJECT_CACHE[file_name] = geojsonvt(JSON.parse(data),CONFIG.tileconfig);
-    OBJECT_CACHE[file_name].accessrank = Date.now()
-
-    
+async function read_file_async(file_name) {
+    try {
+        let file_full_path = `${CONFIG.source_dir}/${file_name}`;
+        let data = await readFile(file_full_path, 'utf8');
+        OBJECT_CACHE.set(file_name, geojsonvt(JSON.parse(data), CONFIG.tileconfig));
+        console.log(`Cache SET: ${file_name}`);
+    } catch (err) {
+        console.error(`Error reading file ${file_name}:`, err);
+        delete PROMISES[file_name]; // Allow retry if file read fails
+        throw err; // Ensure error propagates
+    }
 }
+
 
 
 /*
@@ -217,7 +189,7 @@ function response_204(res){
 */
 async function dashboard_response(res){
 
-    let cached_obj_keys = Object.keys(OBJECT_CACHE);
+    let cached_obj_keys = Array.from(OBJECT_CACHE.keys());
     let memory_usage = (process.memoryUsage().heapUsed / (1024 * 1024)).toFixed(2).toString()
     let cached_obj_count = cached_obj_keys.length.toString();
     let tile_conf_str = JSON.stringify(CONFIG.tileconfig,null,4);
@@ -230,7 +202,7 @@ async function dashboard_response(res){
             <td>${i+1}</td>
             <td>
                 <a><span class='bull'>&#x25A3;</span> ${cached_obj_keys[i]}</a>
-                <br>Last access time: ${OBJECT_CACHE[cached_obj_keys[i]].accessrank}
+                <br>Last access time: ${new Date().toLocaleString()}
             </td>
         </tr>
         `;
