@@ -1,17 +1,18 @@
-#!/usr/bin/env node
-import { createServer, request } from 'http';
+import { createServer } from 'http';
 import * as url from 'url';
 import geojsonvt from 'geojson-vt';
 import vtpbf from 'vt-pbf';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { readFile } from 'fs/promises';
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync, readdirSync, statSync } from 'fs';
 import { LRUCache } from 'lru-cache';
-const fs = require('fs');  // Add at top of file
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-
-
+// Get directory name in ES module
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /*
 # Options:
@@ -99,15 +100,16 @@ async function read_file_async(file_name) {
     @parses filename, z, x, y values from url
 */ 
 function get_url_parts(req){
-    
-    
-    let _url = url.parse(req.url,true)
+    let _url = url.parse(req.url,true);
+    let parts = _url.pathname.split('/');
+    let file = _url.query['file'];
+    let route = parts[1];
 
-    let parts = _url.pathname.split('/')
-    let file = _url.query['file']
+    if (route == 'files') {
+        return { 'route': route };
+    }
 
-    let route = parts[1],
-        z = parseInt(parts[2]),
+    let z = parseInt(parts[2]),
         x = parseInt(parts[3]),
         y = parseInt(parts[4]);
 
@@ -258,7 +260,7 @@ function handle_request(req, res) {
 
     else if (params.route == 'tile') {
         // Check if file exists first
-        if (!fs.existsSync(params.tile.file)) {
+        if (!existsSync(params.tile.file)) {
             response_404(res);
             return;
         }
@@ -266,6 +268,22 @@ function handle_request(req, res) {
         get_tile(params.tile.zxy, params.tile.file).then((tile_data) => {
             tile_response(tile_data, res)
         })
+    }
+
+    // Add new files route handler
+    else if (params.route == 'files') {
+        try {
+            const files = readdirSync(CONFIG.source_dir)
+                .filter(file => file.endsWith('.geojson'))
+                .map(file => ({
+                    name: file,
+                    size: statSync(path.join(CONFIG.source_dir, file)).size
+                }));
+            response_json(res, files);
+        } catch (err) {
+            console.error('Error reading directory:', err);
+            response_json(res, []);
+        }
     }
 
     else if (params.route == 'dashboard') {
@@ -316,27 +334,21 @@ function main(){
 */
 main();
 
-
 /*
- docs:
- http://richorama.github.io/2019/02/05/roll-your-own-vector-tile-service/ 
- https://stackoverflow.com/questions/33547088/how-to-display-vector-tiles-generated-by-geojson-vt-in-leaflet
+ Documentation:
+ - http://richorama.github.io/2019/02/05/roll-your-own-vector-tile-service/ 
+ - https://stackoverflow.com/questions/33547088/how-to-display-vector-tiles-generated-by-geojson-vt-in-leaflet
 
-#Todo:
+ Todo:
  - Add MongoDB backend with file as fallback
  - Create a dashboard for cache monitoring (done)
  - Add multi process support
  - Add support for loading composite tiles composite layer support
- - read file as stream to reduce memory usage (priority)
- - change the request pattern like this /tile/z/x/y?file=<file1_name>&file=<file2_name>
+ - Read file as stream to reduce memory usage (priority)
+ - Change the request pattern like this /tile/z/x/y?file=<file1_name>&file=<file2_name>
 
-
-#Request Pattern:
-- /tile/filename/z/x/y                                |  loading single file
-- /tile/f_one[layer_name]+f_two[layer_name]/z/x/y.mvt | loading multiple file
-- /dash/                                              |  dashboard
-     
-
-** best implementation yet
-** implement worker
+ Request Pattern:
+ - /tile/filename/z/x/y                                |  loading single file
+ - /tile/f_one[layer_name]+f_two[layer_name]/z/x/y.mvt |  loading multiple file
+ - /dash/                                              |  dashboard
 */
