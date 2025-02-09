@@ -1,0 +1,13 @@
+{
+  "apps": [
+    {
+      "name": "vector-tile-server",
+      "script": "./src/server.js",
+      "args": "--config=./default.config.json",
+      "watch": false,
+      "instances": 1,
+      "autorestart": true,
+      "max_memory_restart": "1024M"
+    }
+  ]
+}

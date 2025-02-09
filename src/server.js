@@ -8,6 +8,7 @@ import { hideBin } from 'yargs/helpers';
 import { readFile } from 'fs/promises';
 import { readFileSync } from 'fs';
 import { LRUCache } from 'lru-cache';
+const fs = require('fs');  // Add at top of file
 
 
 
@@ -248,26 +249,31 @@ function tile_response(tile_data,res){
 /*
     @handles http requests
 */
-function handle_request(req,res){
-
+function handle_request(req, res) {
     let params = get_url_parts(req)
 
-    if (params == null){
-        response_json(res, "{'message':'invalid uri'}",'application/json')
+    if (params == null) {
+        response_json(res, "{'message':'invalid uri'}", 'application/json')
     }
 
-    else if (params.route=='tile'){
-        get_tile(params.tile.file, params.tile.zxy).then((tile_data)=>{
-            tile_response(tile_data,res)
+    else if (params.route == 'tile') {
+        // Check if file exists first
+        if (!fs.existsSync(params.tile.file)) {
+            response_404(res);
+            return;
+        }
+        
+        get_tile(params.tile.zxy, params.tile.file).then((tile_data) => {
+            tile_response(tile_data, res)
         })
     }
 
-    else if(params.route=='dashboard'){
-        dashboard_response(res).then(()=>{
-            console.log('D;',Date.now())
+    else if (params.route == 'dashboard') {
+        dashboard_response(res).then(() => {
+            console.log('D;', Date.now())
         });
-    }else{
-        response_204(res);
+    } else {
+        response_404(res);
     }
 }
 

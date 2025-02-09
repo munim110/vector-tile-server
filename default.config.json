@@ -6,7 +6,7 @@
     "tile_format":"protobuf",
     
     "backend":"fs",
-    "source_dir":"/Users/nzahasan/Development/@self/vector-tile-server/data",
+    "source_dir":"/home/rimes/vector-tile-server/data",
     
     "dabase_url":"nada",
     "table":"ff",
